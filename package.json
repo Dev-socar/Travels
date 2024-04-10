@@ -4,7 +4,7 @@
   "description": "Clon AirBNB, BEM, SASS, Gulp, CSS Grid",
   "main": "index.js",
   "scripts": {
-    "dev": "gulp"
+    "dev": "gulp dev"
   },
   "author": "Omar Fernando Solís Carvajal",
   "license": "ISC",

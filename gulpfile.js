@@ -1,4 +1,4 @@
-const { src, dest, watch, series } = require('gulp');
+const { src, dest, watch, parallel } = require('gulp');
 
 // CSS y SASS
 const sass = require('gulp-sass')(require('sass'));
@@ -11,16 +11,19 @@ const cssnano = require('cssnano');
 const imagemin = require('gulp-imagemin');
 const webp = require('gulp-webp');
 const avif = require('gulp-avif');
-
-function css( done ) {
-    src('src/scss/app.scss')
-        .pipe( sourcemaps.init() )
-        .pipe( sass() )
-        .pipe( postcss([ autoprefixer(), cssnano() ]) )
-        .pipe( sourcemaps.write('.'))
-        .pipe( dest('build/css') )
-
-    done();
+const paths = {
+  scss: "src/scss/**/*.scss",
+  imagenes: "src/img/**/*",
+};
+function css() {
+      return (
+        src(paths.scss)
+          .pipe(sourcemaps.init())
+          .pipe(sass({ outputStyle: "expanded" }))
+          .pipe( postcss([autoprefixer(), cssnano()]))
+          .pipe(sourcemaps.write("."))
+          .pipe(dest("build/css"))
+      );
 }
 
 function imagenes() {
@@ -29,26 +32,31 @@ function imagenes() {
         .pipe( dest('build/img') )
 }
 
-function versionWebp() {
-    const opciones = {
-        quality: 50
-    }
-    return src('src/img/**/*.{png,jpg}')
-        .pipe( webp( opciones ) )
-        .pipe( dest('build/img') )
+function versionWebp(done) {
+  const opciones = {
+    quality: 50,
+  };
+  src("src/img/**/*.{png,jpg}")
+    .pipe(webp(opciones))
+    .pipe(dest("build/img"));
+  done();
 }
-function versionAvif() {
-    const opciones = {
-        quality: 50
-    }
-    return src('src/img/**/*.{png,jpg}')
-        .pipe( avif( opciones ) )
-        .pipe( dest('build/img'))
+function versionAvif(done) {
+  const opciones = {
+    quality: 50,
+  };
+  src("src/img/**/*.{png,jpg}")
+    .pipe(avif(opciones))
+    .pipe(dest("build/img"));
+  done();
 }
 
-function dev() {
-    watch( 'src/scss/**/*.scss', css );
-    watch( 'src/img/**/*', imagenes );
+function dev(done) {
+     watch(paths.scss, css);
+     watch(paths.imagenes, imagenes);
+     watch(paths.imagenes, versionWebp);
+     watch(paths.imagenes, versionAvif);
+     done();
 }
 
 
@@ -57,5 +65,10 @@ exports.dev = dev;
 exports.imagenes = imagenes;
 exports.versionWebp = versionWebp;
 exports.versionAvif = versionAvif;
-exports.default = series(css, dev  );
-// exports.default = series( imagenes, versionWebp, versionAvif, css, dev  );
+exports.dev = parallel(
+  css,
+  imagenes,
+  versionWebp,
+  versionAvif,
+  dev
+);
